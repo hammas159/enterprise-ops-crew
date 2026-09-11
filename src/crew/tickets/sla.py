@@ -84,8 +84,14 @@ class SLAPolicy:
         return response * 3600, resolution * 3600
 
     def status(
-        self, *, created_at: float, priority: Priority, first_response_at: float | None,
-        resolved_at: float | None, paused_seconds: float = 0.0, now: float | None = None,
+        self,
+        *,
+        created_at: float,
+        priority: Priority,
+        first_response_at: float | None,
+        resolved_at: float | None,
+        paused_seconds: float = 0.0,
+        now: float | None = None,
     ) -> dict:
         """Where this ticket stands against its targets.
 
@@ -117,7 +123,5 @@ class SLAPolicy:
             "resolution_breached": resolution_elapsed > resolution_target,
             # Fraction of the resolution budget consumed. Above 1.0 is a breach; the
             # number matters more than the boolean, because 0.9 is when to act.
-            "burn": round(resolution_elapsed / resolution_target, 3)
-            if resolution_target
-            else 0.0,
+            "burn": round(resolution_elapsed / resolution_target, 3) if resolution_target else 0.0,
         }

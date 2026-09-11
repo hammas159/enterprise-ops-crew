@@ -18,14 +18,20 @@ from dataclasses import dataclass
 from ..tickets.models import Priority
 
 CATEGORY_RULES: dict[str, list[str]] = {
-    "access": ["password", "reset", "locked out", "cannot log in", "can't log in",
-               "access", "permission", "mfa", "2fa"],
-    "hr": ["leave", "holiday", "annual leave", "payslip", "salary", "onboarding",
-           "resign", "sick"],
-    "billing": ["invoice", "refund", "charge", "payment", "billing", "overcharged",
-                "receipt"],
-    "incident": ["outage", "down", "not working", "broken", "error", "failed",
-                 "timeout", "500"],
+    "access": [
+        "password",
+        "reset",
+        "locked out",
+        "cannot log in",
+        "can't log in",
+        "access",
+        "permission",
+        "mfa",
+        "2fa",
+    ],
+    "hr": ["leave", "holiday", "annual leave", "payslip", "salary", "onboarding", "resign", "sick"],
+    "billing": ["invoice", "refund", "charge", "payment", "billing", "overcharged", "receipt"],
+    "incident": ["outage", "down", "not working", "broken", "error", "failed", "timeout", "500"],
     "request": ["please add", "request", "new account", "provision", "install"],
 }
 
@@ -59,10 +65,7 @@ class TriageResult:
 
 
 def _hits(text: str, phrases: list[str]) -> list[str]:
-    return [
-        p for p in phrases
-        if re.search(_WORD_BOUNDARY.format(re.escape(p)), text, re.I)
-    ]
+    return [p for p in phrases if re.search(_WORD_BOUNDARY.format(re.escape(p)), text, re.I)]
 
 
 def triage(subject: str, body: str = "", *, confidence_floor: float = 0.34) -> TriageResult:
@@ -78,8 +81,9 @@ def triage(subject: str, body: str = "", *, confidence_floor: float = 0.34) -> T
     priority = min((URGENCY_SIGNALS[p] for p in urgency), default=Priority.NORMAL)
 
     if not scores:
-        return TriageResult("unknown", priority, 0.0, [], needs_human=True,
-                            reason="no category matched")
+        return TriageResult(
+            "unknown", priority, 0.0, [], needs_human=True, reason="no category matched"
+        )
 
     best = max(scores, key=lambda c: len(scores[c]))
     total = sum(len(v) for v in scores.values())
@@ -92,7 +96,10 @@ def triage(subject: str, body: str = "", *, confidence_floor: float = 0.34) -> T
 
     needs_human = confidence < confidence_floor
     return TriageResult(
-        category=best, priority=priority, confidence=confidence,
-        matched=scores[best], needs_human=needs_human,
+        category=best,
+        priority=priority,
+        confidence=confidence,
+        matched=scores[best],
+        needs_human=needs_human,
         reason="ambiguous: several categories matched equally" if needs_human else "",
     )

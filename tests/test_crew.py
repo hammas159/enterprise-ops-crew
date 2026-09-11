@@ -134,8 +134,11 @@ class TestBusinessHours:
         created = dt.datetime(2026, 9, 14, 9, 0).timestamp()
         now = dt.datetime(2026, 9, 14, 12, 0).timestamp()
         status = policy.status(
-            created_at=created, priority=Priority.URGENT,
-            first_response_at=None, resolved_at=None, now=now,
+            created_at=created,
+            priority=Priority.URGENT,
+            first_response_at=None,
+            resolved_at=None,
+            now=now,
         )
         assert status["burn"] == pytest.approx(0.75, abs=0.01)
         assert not status["resolution_breached"]
@@ -164,19 +167,27 @@ class TestAutonomousWork:
 
     def test_a_backend_failure_escalates(self):
         c = crew()
-        c.systems.register(Operation(
-            "itsm_reset_password", "itsm", Risk.WRITE,
-            lambda account: (_ for _ in ()).throw(ConnectionError("itsm down")),
-        ))
+        c.systems.register(
+            Operation(
+                "itsm_reset_password",
+                "itsm",
+                Risk.WRITE,
+                lambda account: (_ for _ in ()).throw(ConnectionError("itsm down")),
+            )
+        )
         t = c.intake(ticket("Cannot log in, password reset needed"))
         assert c.work(t.id).status is Status.ESCALATED
 
     def test_an_optional_step_failing_does_not_escalate(self):
         c = crew()
-        c.systems.register(Operation(
-            "itsm_reset_password", "itsm", Risk.WRITE,
-            lambda account: (_ for _ in ()).throw(ConnectionError("itsm down")),
-        ))
+        c.systems.register(
+            Operation(
+                "itsm_reset_password",
+                "itsm",
+                Risk.WRITE,
+                lambda account: (_ for _ in ()).throw(ConnectionError("itsm down")),
+            )
+        )
         t = c.intake(ticket("Production down, all users affected"))
         assert c.work(t.id).status is Status.RESOLVED
 
@@ -189,8 +200,7 @@ class TestAutonomousWork:
 class TestApprovalGate:
     def test_an_irreversible_action_stops_for_a_human(self):
         c = crew()
-        t = c.intake(ticket("Refund for invoice 4421 please"),
-                     invoice_id="4421", amount=4200)
+        t = c.intake(ticket("Refund for invoice 4421 please"), invoice_id="4421", amount=4200)
         result = c.work(t.id)
         assert result.status is Status.AWAITING_APPROVAL
         assert c.approvals[t.id].operation == "erp_issue_refund"
@@ -200,24 +210,21 @@ class TestApprovalGate:
     def test_the_lookup_before_it_still_happened(self):
         """The gate stops the dangerous step, not the whole playbook."""
         c = crew()
-        t = c.intake(ticket("Refund for invoice 4421 please"),
-                     invoice_id="4421", amount=4200)
+        t = c.intake(ticket("Refund for invoice 4421 please"), invoice_id="4421", amount=4200)
         c.work(t.id)
         assert c.systems.calls[0][0] == "erp_lookup_invoice"
 
     def test_approval_lets_the_work_through(self):
         """The gate must be a gate, not a wall."""
         c = crew()
-        t = c.intake(ticket("Refund for invoice 4421 please"),
-                     invoice_id="4421", amount=4200)
+        t = c.intake(ticket("Refund for invoice 4421 please"), invoice_id="4421", amount=4200)
         c.work(t.id)
         assert c.approve(t.id, approver="manager").status is Status.RESOLVED
         assert c.systems.side_effects == ["refund:4421"]
 
     def test_rejection_escalates_and_takes_no_action(self):
         c = crew()
-        t = c.intake(ticket("Refund for invoice 4421 please"),
-                     invoice_id="4421", amount=4200)
+        t = c.intake(ticket("Refund for invoice 4421 please"), invoice_id="4421", amount=4200)
         c.work(t.id)
         result = c.reject(t.id, approver="manager", reason="customer not eligible")
         assert result.status is Status.ESCALATED
@@ -226,8 +233,7 @@ class TestApprovalGate:
     def test_the_approval_record_keeps_the_arguments(self):
         """A human approving 'issue a refund' without the amount is not approving."""
         c = crew()
-        t = c.intake(ticket("Refund for invoice 4421 please"),
-                     invoice_id="4421", amount=4200)
+        t = c.intake(ticket("Refund for invoice 4421 please"), invoice_id="4421", amount=4200)
         c.work(t.id)
         assert c.approvals[t.id].arguments == {"invoice_id": "4421", "amount": 4200}
 
@@ -239,8 +245,7 @@ class TestApprovalGate:
     def test_raising_the_ceiling_removes_the_gate(self):
         """Policy is configuration, and the effect of changing it must be visible."""
         c = Crew(systems=build_default_registry(autonomous_ceiling=Risk.IRREVERSIBLE))
-        t = c.intake(ticket("Refund for invoice 4421 please"),
-                     invoice_id="4421", amount=4200)
+        t = c.intake(ticket("Refund for invoice 4421 please"), invoice_id="4421", amount=4200)
         assert c.work(t.id).status is Status.RESOLVED
         assert c.systems.side_effects == ["refund:4421"]
 
@@ -257,8 +262,7 @@ class TestReporting:
 
     def test_irreversible_actions_are_counted(self):
         c = crew()
-        t = c.intake(ticket("Refund for invoice 4421 please"),
-                     invoice_id="4421", amount=4200)
+        t = c.intake(ticket("Refund for invoice 4421 please"), invoice_id="4421", amount=4200)
         c.work(t.id)
         c.approve(t.id, approver="manager")
         assert c.daily_report()["irreversible_actions_taken"] == 1
@@ -302,8 +306,7 @@ class TestReporting:
 class TestAudit:
     def test_the_full_trail_is_on_the_ticket(self):
         c = crew()
-        t = c.intake(ticket("Refund for invoice 4421 please"),
-                     invoice_id="4421", amount=4200)
+        t = c.intake(ticket("Refund for invoice 4421 please"), invoice_id="4421", amount=4200)
         c.work(t.id)
         c.approve(t.id, approver="manager")
         actions = [e.action for e in t.history]
@@ -315,8 +318,7 @@ class TestAudit:
 
     def test_the_approver_is_named(self):
         c = crew()
-        t = c.intake(ticket("Refund for invoice 4421 please"),
-                     invoice_id="4421", amount=4200)
+        t = c.intake(ticket("Refund for invoice 4421 please"), invoice_id="4421", amount=4200)
         c.work(t.id)
         c.approve(t.id, approver="m.manager")
         assert any(e.actor == "m.manager" for e in t.history)
