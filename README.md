@@ -141,3 +141,53 @@ make test
 ## License
 
 MIT
+
+---
+
+## Run it yourself
+
+```bash
+git clone https://github.com/hammas159/enterprise-ops-crew
+cd enterprise-ops-crew
+
+uv sync --all-groups     # or: pip install -e ".[dev]"
+make test                # 39 tests, no ERP licence, no model, no network
+```
+
+```python
+from crew import Crew, Ticket
+from crew.systems import build_default_registry
+
+crew = Crew(systems=build_default_registry())
+
+t = crew.intake(Ticket(subject="Cannot log in, password reset needed",
+                       requester="e-1001"))
+crew.work(t.id)                       # resolved autonomously
+
+r = crew.intake(Ticket(subject="Refund for invoice 4421", requester="c-77"),
+                invoice_id="4421", amount=4200)
+crew.work(r.id)                       # AWAITING_APPROVAL, no money moved
+crew.approve(r.id, approver="manager")
+
+crew.daily_report()                   # resolution rate, escalations, at-risk SLAs
+crew.sla_status(r.id)                 # business hours, not wall clock
+```
+
+## Problems hit while building this
+
+**Every triage rule silently matched nothing.** The word-boundary pattern was written as
+`"\b{}\b"` inside a shell heredoc, which collapsed to a literal **backspace character**
+rather than a regex boundary. The module imported cleanly, the tests compiled, and
+triage returned `unknown` for every ticket ever submitted. *Fixed* with a raw string —
+and there is now a test asserting `"accessory"` does not match the rule for `access`,
+because the boundary is load-bearing in both directions.
+
+**SLA clocks ran on wall time first.** A ticket raised at 5pm Friday with a four-hour
+target was "breached" by 9pm Friday, when the desk had been closed for four hours. That
+produces a dashboard full of breaches nobody caused and nobody could have prevented —
+and a dashboard nobody believes is a dashboard nobody reads. *Fixed* by measuring in
+business hours, with configurable working days and holidays.
+
+**Reporting only the breach boolean was useless.** By the time it flips, the SLA is
+already missed. *Fixed* by reporting `burn` — the fraction of the budget consumed — so
+`at_risk(0.8)` surfaces tickets while somebody can still act on them.
