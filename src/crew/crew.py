@@ -167,9 +167,7 @@ class Crew:
             raise KeyError(f"{ticket_id} has no pending approval")
         ticket = self.tickets[ticket_id]
         ticket.record(approver, "rejected", operation=pending.operation, reason=reason)
-        ticket.transition(
-            Status.ESCALATED, actor=approver, reason=reason or "approval rejected"
-        )
+        ticket.transition(Status.ESCALATED, actor=approver, reason=reason or "approval rejected")
         return ticket
 
     # ---- reporting ------------------------------------------------------------

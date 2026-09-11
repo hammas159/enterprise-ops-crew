@@ -18,9 +18,9 @@ from typing import Any
 
 class Risk(enum.IntEnum):
     READ = 0
-    WRITE = 1          # reversible
-    EXTERNAL = 2       # leaves the company: email, SMS, supplier API
-    IRREVERSIBLE = 3   # payment, deletion, contract, anything sent to a person
+    WRITE = 1  # reversible
+    EXTERNAL = 2  # leaves the company: email, SMS, supplier API
+    IRREVERSIBLE = 3  # payment, deletion, contract, anything sent to a person
 
 
 class ApprovalRequired(RuntimeError):
@@ -81,32 +81,85 @@ def build_default_registry(**kw) -> SystemsRegistry:
     reg = SystemsRegistry(**kw)
     effects = reg.side_effects
 
-    reg.register(Operation("hrms_lookup_employee", "hrms", Risk.READ,
-                           lambda employee_id: {"id": employee_id, "name": "A. Employee",
-                                                "manager": "M. Manager", "leave_days": 12},
-                           "Fetch an employee record"))
-    reg.register(Operation("hrms_book_leave", "hrms", Risk.WRITE,
-                           lambda employee_id, days: {"booked": days, "remaining": 12 - days},
-                           "Book annual leave"))
-    reg.register(Operation("itsm_reset_password", "itsm", Risk.WRITE,
-                           lambda account: {"account": account, "reset": True},
-                           "Reset an account password"))
-    reg.register(Operation("itsm_grant_access", "itsm", Risk.IRREVERSIBLE,
-                           lambda account, system: effects.append(f"access:{account}:{system}")
-                           or {"granted": True},
-                           "Grant access to a system"))
-    reg.register(Operation("crm_lookup_customer", "crm", Risk.READ,
-                           lambda customer_id: {"id": customer_id, "tier": "gold"},
-                           "Fetch a customer record"))
-    reg.register(Operation("crm_send_email", "crm", Risk.EXTERNAL,
-                           lambda to, body: effects.append(f"email:{to}") or {"sent": True},
-                           "Email a customer. Cannot be recalled."))
-    reg.register(Operation("erp_lookup_invoice", "erp", Risk.READ,
-                           lambda invoice_id: {"id": invoice_id, "amount": 4200,
-                                               "status": "unpaid"},
-                           "Fetch an invoice"))
-    reg.register(Operation("erp_issue_refund", "erp", Risk.IRREVERSIBLE,
-                           lambda invoice_id, amount: effects.append(f"refund:{invoice_id}")
-                           or {"refunded": amount},
-                           "Issue a refund. Moves money."))
+    reg.register(
+        Operation(
+            "hrms_lookup_employee",
+            "hrms",
+            Risk.READ,
+            lambda employee_id: {
+                "id": employee_id,
+                "name": "A. Employee",
+                "manager": "M. Manager",
+                "leave_days": 12,
+            },
+            "Fetch an employee record",
+        )
+    )
+    reg.register(
+        Operation(
+            "hrms_book_leave",
+            "hrms",
+            Risk.WRITE,
+            lambda employee_id, days: {"booked": days, "remaining": 12 - days},
+            "Book annual leave",
+        )
+    )
+    reg.register(
+        Operation(
+            "itsm_reset_password",
+            "itsm",
+            Risk.WRITE,
+            lambda account: {"account": account, "reset": True},
+            "Reset an account password",
+        )
+    )
+    reg.register(
+        Operation(
+            "itsm_grant_access",
+            "itsm",
+            Risk.IRREVERSIBLE,
+            lambda account, system: (
+                effects.append(f"access:{account}:{system}") or {"granted": True}
+            ),
+            "Grant access to a system",
+        )
+    )
+    reg.register(
+        Operation(
+            "crm_lookup_customer",
+            "crm",
+            Risk.READ,
+            lambda customer_id: {"id": customer_id, "tier": "gold"},
+            "Fetch a customer record",
+        )
+    )
+    reg.register(
+        Operation(
+            "crm_send_email",
+            "crm",
+            Risk.EXTERNAL,
+            lambda to, body: effects.append(f"email:{to}") or {"sent": True},
+            "Email a customer. Cannot be recalled.",
+        )
+    )
+    reg.register(
+        Operation(
+            "erp_lookup_invoice",
+            "erp",
+            Risk.READ,
+            lambda invoice_id: {"id": invoice_id, "amount": 4200, "status": "unpaid"},
+            "Fetch an invoice",
+        )
+    )
+    reg.register(
+        Operation(
+            "erp_issue_refund",
+            "erp",
+            Risk.IRREVERSIBLE,
+            lambda invoice_id, amount: (
+                effects.append(f"refund:{invoice_id}") or {"refunded": amount}
+            ),
+            "Issue a refund. Moves money.",
+        )
+    )
     return reg

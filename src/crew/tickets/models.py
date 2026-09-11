@@ -22,7 +22,7 @@ class Priority(enum.IntEnum):
     URGENT = 0  # lowest value sorts first
 
 
-class Status(str, enum.Enum):
+class Status(enum.StrEnum):
     NEW = "new"
     TRIAGED = "triaged"
     IN_PROGRESS = "in_progress"
@@ -37,12 +37,15 @@ ALLOWED: dict[Status, set[Status]] = {
     Status.NEW: {Status.TRIAGED, Status.ESCALATED, Status.CLOSED},
     Status.TRIAGED: {Status.IN_PROGRESS, Status.ESCALATED, Status.CLOSED},
     Status.IN_PROGRESS: {
-        Status.AWAITING_APPROVAL, Status.RESOLVED, Status.ESCALATED, Status.TRIAGED,
+        Status.AWAITING_APPROVAL,
+        Status.RESOLVED,
+        Status.ESCALATED,
+        Status.TRIAGED,
     },
     Status.AWAITING_APPROVAL: {Status.IN_PROGRESS, Status.RESOLVED, Status.ESCALATED},
     Status.ESCALATED: {Status.IN_PROGRESS, Status.RESOLVED, Status.CLOSED},
     Status.RESOLVED: {Status.CLOSED, Status.IN_PROGRESS},  # reopening is legitimate
-    Status.CLOSED: set(),                                   # terminal
+    Status.CLOSED: set(),  # terminal
 }
 
 
@@ -79,8 +82,9 @@ class Ticket:
     def transition(self, to: Status, *, actor: str, reason: str = "") -> None:
         if to not in ALLOWED[self.status]:
             raise TransitionError(f"{self.id}: cannot go {self.status.value} -> {to.value}")
-        self.record(actor, "transition", **{"from": self.status.value,
-                                            "to": to.value, "reason": reason})
+        self.record(
+            actor, "transition", **{"from": self.status.value, "to": to.value, "reason": reason}
+        )
         self.status = to
         if to is Status.RESOLVED:
             self.resolved_at = time.time()
