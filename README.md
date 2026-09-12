@@ -1,4 +1,4 @@
-# enterprise-ops-crew
+# enterprise-ops-crew (FastAPI, Pydantic, Typer)
 
 [![ci](https://github.com/hammas159/enterprise-ops-crew/actions/workflows/ci.yml/badge.svg)](https://github.com/hammas159/enterprise-ops-crew/actions/workflows/ci.yml)
 ![python](https://img.shields.io/badge/python-3.12-blue)
