@@ -1,4 +1,4 @@
-# enterprise-ops-crew (FastAPI, Pydantic, Typer)
+# enterprise-ops-crew (Python, zero core dependencies, optional Streamlit demo)
 
 [![ci](https://github.com/hammas159/enterprise-ops-crew/actions/workflows/ci.yml/badge.svg)](https://github.com/hammas159/enterprise-ops-crew/actions/workflows/ci.yml)
 ![python](https://img.shields.io/badge/python-3.12-blue)
@@ -112,7 +112,7 @@ cross between them — read from HRMS, write to ITSM, and stop before touching p
 
 ## Tests
 
-**39 tests. No ERP licence, no model, no network.**
+**45 tests (39 core + 6 for the optional Streamlit demo). No ERP licence, no model, no network.**
 
 ```bash
 make test
@@ -151,7 +151,7 @@ git clone https://github.com/hammas159/enterprise-ops-crew
 cd enterprise-ops-crew
 
 uv sync --all-groups     # or: pip install -e ".[dev]"
-make test                # 39 tests, no ERP licence, no model, no network
+make test                # 45 tests, no ERP licence, no model, no network
 ```
 
 ```python
@@ -173,6 +173,23 @@ crew.daily_report()                   # resolution rate, escalations, at-risk SL
 crew.sla_status(r.id)                 # business hours, not wall clock
 ```
 
+### The demo dashboard (`ui` dependency group)
+
+`pyproject.toml` has declared a `streamlit` + `pandas` `ui` group since the repo's
+first commit; this is the actual demo that group was for. Submit a ticket from one of
+five samples and watch it move through intake → triage → playbook — including the
+billing refund that stops at `AWAITING_APPROVAL` with no money moved until a human
+clicks approve (or reject), and the deliberately vague ticket that triage abstains on
+rather than guessing. Second tab lists every ticket in the session by status.
+
+```bash
+uv sync --group ui        # or: pip install streamlit pandas
+streamlit run ui/app.py
+```
+
+Local only, in-memory state, the same mock ERP/ITSM/HRMS registry the tests use — not
+a deployed service.
+
 ## Problems hit while building this
 
 **Every triage rule silently matched nothing.** The word-boundary pattern was written as
@@ -191,3 +208,19 @@ business hours, with configurable working days and holidays.
 **Reporting only the breach boolean was useless.** By the time it flips, the SLA is
 already missed. *Fixed* by reporting `burn` — the fraction of the budget consumed — so
 `at_risk(0.8)` surfaces tickets while somebody can still act on them.
+
+**`fastapi`, `uvicorn`, `pydantic`, `rich` and `typer` were declared as core
+dependencies and imported nowhere** — grepped `src/` and `tests/` for each before
+touching anything, and there was a matching empty `src/crew/api/` folder, scaffolding
+for a service never built. The README title claimed that stack too. *Fixed* by
+removing all five, deleting the folder, and correcting the title: this is pure Python
+with zero core dependencies, and the real gap was the declared-but-unbuilt Streamlit
+demo above.
+
+**Two bugs in the demo, both from assuming the API worked the way it reads.**
+`approve()` already calls `work()` internally and returns a resolved ticket, so
+calling `work()` again after it raised `TransitionError: cannot be worked`. And
+`intake()` escalates a low-confidence ticket *directly*, without ever passing through
+`triaged` — so handing that ticket to `work()` raised the same error. Both only
+surfaced by actually clicking through every sample scenario rather than testing the
+happy path.
