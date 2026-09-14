@@ -1,19 +1,47 @@
-# enterprise-ops-crew (Python, zero core dependencies, optional Streamlit demo)
+<h1 align="center">enterprise-ops-crew</h1>
+<p align="center"><i>A back-office crew that resolves tickets across four systems, and stops before it does anything it cannot undo</i></p>
 
-[![ci](https://github.com/hammas159/enterprise-ops-crew/actions/workflows/ci.yml/badge.svg)](https://github.com/hammas159/enterprise-ops-crew/actions/workflows/ci.yml)
-![python](https://img.shields.io/badge/python-3.12-blue)
-![license](https://img.shields.io/badge/license-MIT-green)
+<p align="center">
+  <a href="#the-three-places-it-can-stop-safely">Where it stops</a> &middot;
+  <a href="#execution-runs-on-playbooks-not-prompts">Playbooks</a> &middot;
+  <a href="#slas-run-on-business-hours">SLAs</a> &middot;
+  <a href="#the-report-answers-the-question-a-manager-actually-asks">The report</a> &middot;
+  <a href="#limits">Limits</a> &middot;
+  <a href="#problems-hit-while-building-this">Problems hit</a>
+</p>
 
-**A back-office crew that resolves tickets across four systems, and stops before it
-does anything it cannot undo.**
-
-Intake → triage → playbook execution → approval gate → escalation → daily report.
-Multi-agent in the sense that matters operationally: **distinct roles with distinct
-authority**, not several models talking to each other.
+<p align="center">
+  <a href="https://github.com/hammas159/enterprise-ops-crew/actions/workflows/ci.yml"><img src="https://github.com/hammas159/enterprise-ops-crew/actions/workflows/ci.yml/badge.svg" alt="ci"></a>
+  <img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="python">
+  <img src="https://img.shields.io/badge/core%20deps-zero-success" alt="deps">
+  <img src="https://img.shields.io/badge/stack-Streamlit%20(optional%20demo)-orange" alt="stack">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="license"></a>
+</p>
 
 ---
 
 ## The three places it can stop safely
+
+```mermaid
+flowchart LR
+    I["intake"] --> T["triage"]
+    T --> P["playbook execution"]
+    P --> G{"reversible?"}
+    G -->|"yes"| E["execute"]
+    G -->|"no"| A["approval gate"]
+    A --> H["escalate to a human"]
+    E --> R["daily report"]
+    H --> R
+
+    style A fill:#f59e0b,color:#fff
+    style H fill:#dc2626,color:#fff
+    style R fill:#2563eb,color:#fff
+```
+
+**Multi-agent in the sense that matters operationally:** distinct roles with **distinct
+authority**, not several models talking to each other. The gate is where the design lives -
+it stops before anything it cannot undo.
+
 
 | Boundary | What it prevents |
 |---|---|
@@ -137,6 +165,10 @@ make test
 - One SLA policy per crew. Per-tenant policies are a dictionary lookup away.
 - Facts a playbook needs are supplied explicitly rather than extracted from the ticket
   text — deliberate, so the routing and authority logic can be tested on its own.
+
+## Keywords
+
+multi-agent systems &middot; back office automation &middot; ticket routing &middot; workflow automation &middot; approval gate &middot; human in the loop &middot; escalation &middot; SLA &middot; business hours &middot; playbooks &middot; state machine &middot; AIOps &middot; enterprise automation &middot; zero dependencies &middot; Streamlit
 
 ## License
 
