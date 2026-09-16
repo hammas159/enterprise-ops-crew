@@ -5,6 +5,7 @@
 Four mock enterprise systems, a real playbook engine, real state transitions.
 No model, no network.
 """
+
 import sys
 
 sys.path.insert(0, "src")
@@ -25,7 +26,7 @@ TICKETS = [
 print("INPUT")
 for subject, facts in TICKETS:
     extra = f"   facts={facts}" if facts else ""
-    print(f"   \"{subject}\"{extra}")
+    print(f'   "{subject}"{extra}')
 print()
 
 print("OUTPUT")
@@ -38,8 +39,7 @@ for subject, facts in TICKETS:
     t = crew.work(t.id)
     worked.append(t)
     steps = len(t.history)
-    print(f"   {subject[:46]:46} {t.category:12} {t.priority.name:9} "
-          f"{t.status.name:14} {steps}")
+    print(f"   {subject[:46]:46} {t.category:12} {t.priority.name:9} {t.status.name:14} {steps}")
 
 print()
 pending = [t for t in worked if t.id in crew.approvals]
