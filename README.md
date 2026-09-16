@@ -205,22 +205,22 @@ crew.daily_report()                   # resolution rate, escalations, at-risk SL
 crew.sla_status(r.id)                 # business hours, not wall clock
 ```
 
-### The demo dashboard (`ui` dependency group)
+### Input / Output
 
-`pyproject.toml` has declared a `streamlit` + `pandas` `ui` group since the repo's
-first commit; this is the actual demo that group was for. Submit a ticket from one of
-five samples and watch it move through intake → triage → playbook — including the
-billing refund that stops at `AWAITING_APPROVAL` with no money moved until a human
-clicks approve (or reject), and the deliberately vague ticket that triage abstains on
-rather than guessing. Second tab lists every ticket in the session by status.
+![input](docs/images/input.png)
 
-```bash
-uv sync --group ui        # or: pip install streamlit pandas
-streamlit run ui/app.py
-```
+`python demo.py`
 
-Local only, in-memory state, the same mock ERP/ITSM/HRMS registry the tests use — not
-a deployed service.
+![output](docs/images/output.png)
+
+Three tickets run to `RESOLVED`. The refund stops at `AWAITING_APPROVAL`, and the two
+lines that matter are the last two: `erp_lookup_invoice` **did** run, and `side_effects`
+is empty.
+
+The gate stops the irreversible step, not the whole playbook. A crew that abandoned the
+ticket entirely would also show no money moved, and would be useless.
+
+Same mock ERP/ITSM/HRMS registry the tests use — no model, no network.
 
 ## Problems hit while building this
 
