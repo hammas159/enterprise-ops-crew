@@ -1,4 +1,4 @@
-<h1 align="center">enterprise-ops-crew</h1>
+<h1 align="center">enterprise-ops-crew (Python · multi-agent playbooks · approval gates)</h1>
 <p align="center"><i>A back-office crew that resolves tickets across four systems, and stops before it does anything it cannot undo</i></p>
 
 <p align="center">
